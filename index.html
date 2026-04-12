@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hybrid Athlete Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  background: #0f0f0d;
+  color: #e8e4dc;
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  padding-bottom: 5rem;
+}
+
+/* NAV */
+.top-nav {
+  position: sticky; top: 0; z-index: 20;
+  background: #0f0f0d;
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  padding: 0 1.25rem;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 52px;
+}
+.nav-title { font-size: 15px; font-weight: 500; color: #f0ede6; }
+.nav-phase {
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  color: #c8f075; letter-spacing: 0.05em;
+}
+
+/* BOTTOM TABS */
+.tabs {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  background: #0f0f0d;
+  border-top: 0.5px solid rgba(255,255,255,0.08);
+  display: flex;
+}
+.tab {
+  flex: 1; padding: 0.75rem 0.5rem 0.9rem;
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  color: #555; text-align: center; cursor: pointer;
+  border: none; background: none;
+  transition: color 0.2s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.tab.active { color: #c8f075; }
+.tab-icon { font-size: 16px; line-height: 1; }
+
+/* SCREENS */
+.screen { display: none; padding: 1.25rem; }
+.screen.active { display: block; }
+
+/* OVERVIEW */
+.hero {
+  background: #1a1a17;
+  border-radius: 16px;
+  border: 0.5px solid rgba(255,255,255,0.06);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.hero-label { font-size: 11px; font-family: 'DM Mono', monospace; color: #555; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+.hero-name { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: #f0ede6; line-height: 1.1; margin-bottom: 4px; }
+.hero-sub { font-size: 13px; color: #666; line-height: 1.5; }
+
+.phase-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
+.phase-card {
+  background: #1a1a17;
+  border-radius: 12px;
+  border: 0.5px solid rgba(255,255,255,0.06);
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.phase-card.current { border-color: rgba(200,240,117,0.3); }
+.phase-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.phase-card-name { font-size: 15px; font-weight: 500; color: #e8e4dc; }
+.phase-card-weeks { font-size: 11px; font-family: 'DM Mono', monospace; color: #555; }
+.phase-card-desc { font-size: 13px; color: #666; line-height: 1.4; }
+.phase-badge {
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  padding: 2px 8px; border-radius: 20px;
+  background: rgba(200,240,117,0.1); color: #c8f075;
+  border: 0.5px solid rgba(200,240,117,0.2);
+}
+
+.principles { margin-bottom: 1.25rem; }
+.section-label { font-size: 11px; font-family: 'DM Mono', monospace; color: #555; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.principle-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 0.5px solid rgba(255,255,255,0.04);
+}
+.principle-row:last-child { border-bottom: none; }
+.principle-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #c8f075; flex-shrink: 0; margin-top: 6px;
+}
+.principle-text { font-size: 14px; color: #aaa; line-height: 1.4; }
+.principle-text strong { color: #e8e4dc; font-weight: 500; }
+
+/* WEEK VIEW */
+.week-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.week-nav-btn {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: #1a1a17; border: 0.5px solid rgba(255,255,255,0.08);
+  color: #888; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.week-nav-btn:disabled { opacity: 0.3; cursor: default; }
+.week-title { font-size: 16px; font-weight: 500; color: #f0ede6; text-align: center; }
+.week-sub { font-size: 12px; font-family: 'DM Mono', monospace; color: #555; text-align: center; }
+
+.day-list { display: flex; flex-direction: column; gap: 8px; }
+.day-card {
+  background: #1a1a17;
+  border-radius: 12px;
+  border: 0.5px solid rgba(255,255,255,0.06);
+  overflow: hidden;
+  cursor: pointer;
+}
+.day-card.rest { opacity: 0.5; cursor: default; }
+.day-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0.85rem 1rem;
+}
+.day-label { font-size: 11px; font-family: 'DM Mono', monospace; color: #555; width: 28px; flex-shrink: 0; }
+.day-type-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.dot-strength { background: #7cb0f0; }
+.dot-run { background: #c8f075; }
+.dot-aerobic { background: #f0b840; }
+.dot-mobility { background: #c084fc; }
+.dot-rest { background: #333; }
+.dot-conditioning { background: #f07070; }
+.day-name { font-size: 15px; font-weight: 500; color: #e8e4dc; flex: 1; }
+.day-duration { font-size: 12px; font-family: 'DM Mono', monospace; color: #555; }
+.day-tag {
+  font-size: 10px; padding: 2px 8px; border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+}
+.tag-strength { background: rgba(124,176,240,0.1); color: #7cb0f0; border: 0.5px solid rgba(124,176,240,0.2); }
+.tag-run { background: rgba(200,240,117,0.1); color: #c8f075; border: 0.5px solid rgba(200,240,117,0.2); }
+.tag-aerobic { background: rgba(240,184,64,0.1); color: #f0b840; border: 0.5px solid rgba(240,184,64,0.2); }
+.tag-mobility { background: rgba(192,132,252,0.1); color: #c084fc; border: 0.5px solid rgba(192,132,252,0.2); }
+.tag-conditioning { background: rgba(240,112,112,0.1); color: #f07070; border: 0.5px solid rgba(240,112,112,0.2); }
+
+.day-detail {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.3s ease;
+  padding: 0 1rem;
+  border-top: 0px solid rgba(255,255,255,0.04);
+}
+.day-card.expanded .day-detail {
+  max-height: 600px;
+  padding: 0.75rem 1rem 1rem;
+  border-top-width: 0.5px;
+}
+.session-block { margin-bottom: 1rem; }
+.session-block:last-child { margin-bottom: 0; }
+.block-label { font-size: 11px; font-family: 'DM Mono', monospace; color: #555; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
+.ex-item { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 0.5px solid rgba(255,255,255,0.04); }
+.ex-item:last-child { border-bottom: none; }
+.ex-item-name { font-size: 14px; color: #ccc; }
+.ex-item-sets { font-size: 12px; font-family: 'DM Mono', monospace; color: #666; }
+.coaching-note {
+  margin-top: 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border-left: 2px solid #c8f075;
+  padding: 8px 10px;
+  font-size: 12px; color: #777; line-height: 1.5;
+}
+
+/* SESSION CARD */
+.session-header { margin-bottom: 1.25rem; }
+.session-big-title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: #f0ede6; margin-bottom: 4px; }
+.session-meta { font-size: 12px; font-family: 'DM Mono', monospace; color: #555; }
+.progress-wrap { margin-bottom: 1.25rem; }
+.prog-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.prog-label { font-size: 12px; font-family: 'DM Mono', monospace; color: #555; }
+.prog-count { font-size: 12px; font-family: 'DM Mono', monospace; color: #c8f075; }
+.prog-bar { height: 2px; background: rgba(255,255,255,0.06); border-radius: 2px; }
+.prog-fill { height: 100%; background: #c8f075; border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+
+.session-day-tabs {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 1.25rem;
+  scrollbar-width: none;
+}
+.session-day-tabs::-webkit-scrollbar { display: none; }
+.sdt {
+  flex-shrink: 0; padding: 5px 12px; border-radius: 20px;
+  font-size: 12px; font-family: 'DM Mono', monospace;
+  background: #1a1a17; border: 0.5px solid rgba(255,255,255,0.08);
+  color: #666; cursor: pointer; transition: all 0.2s;
+}
+.sdt.active { background: rgba(200,240,117,0.1); border-color: rgba(200,240,117,0.3); color: #c8f075; }
+
+.ex-card {
+  background: #1a1a17;
+  border-radius: 12px;
+  border: 0.5px solid rgba(255,255,255,0.06);
+  margin-bottom: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.ex-card.done { border-color: rgba(200,240,117,0.25); background: #161a10; }
+.ex-card-main { display: flex; align-items: center; gap: 12px; padding: 0.85rem 1rem; }
+.ex-check {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.ex-card.done .ex-check { background: #c8f075; border-color: #c8f075; }
+.ex-check svg { display: none; }
+.ex-card.done .ex-check svg { display: block; }
+.ex-card-body { flex: 1; min-width: 0; }
+.ex-card-name { font-size: 15px; font-weight: 500; color: #e8e4dc; margin-bottom: 2px; }
+.ex-card.done .ex-card-name { color: #a8d840; }
+.ex-card-hint { font-size: 12px; color: #555; }
+.ex-card-sets {
+  font-size: 12px; font-family: 'DM Mono', monospace;
+  padding: 4px 9px; border-radius: 6px;
+  background: rgba(255,255,255,0.05); color: #666;
+  white-space: nowrap; flex-shrink: 0;
+}
+.ex-card.done .ex-card-sets { background: rgba(200,240,117,0.1); color: #a8d840; }
+.ex-card-detail {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  padding: 0 1rem;
+  font-size: 13px; color: #777; line-height: 1.6;
+  border-top: 0px solid rgba(255,255,255,0.04);
+}
+.ex-card.expanded .ex-card-detail {
+  max-height: 200px;
+  padding: 0.75rem 1rem;
+  border-top-width: 0.5px;
+}
+
+.phase-divider {
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  color: #444; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 1rem 0 0.5rem;
+  border-bottom: 0.5px solid rgba(255,255,255,0.04);
+  margin-bottom: 8px;
+}
+
+.finish-btn {
+  display: none; width: 100%; margin-top: 1rem;
+  padding: 1rem; background: #c8f075; color: #0f0f0d;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+  border: none; border-radius: 12px; cursor: pointer;
+}
+.finish-btn.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <span class="nav-title">Hybrid Athlete</span>
+  <span class="nav-phase" id="navPhase">Phase 1 — Foundation</span>
+</div>
+
+<!-- OVERVIEW SCREEN -->
+<div class="screen active" id="screen-overview">
+  <div class="hero">
+    <p class="hero-label">Your programme</p>
+    <p class="hero-name">Hybrid Athlete<br>Foundation Plan</p>
+    <p class="hero-sub">18 weeks · 3 phases · built around durability first</p>
+  </div>
+
+  <div class="phase-cards">
+    <div class="phase-card current">
+      <div class="phase-card-header">
+        <span class="phase-card-name">Phase 1 — Foundation</span>
+        <span class="phase-badge">current</span>
+      </div>
+      <p class="phase-card-weeks" style="margin-bottom:6px;">Weeks 1–6</p>
+      <p class="phase-card-desc">Structural strength, movement quality, ankle rehab, postural correction. Running returns gradually on physio's terms. Build the base everything else sits on.</p>
+    </div>
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <span class="phase-card-name">Phase 2 — Build</span>
+        <span class="phase-card-weeks">Weeks 7–12</span>
+      </div>
+      <p class="phase-card-desc">Load the foundations. Proper strength progressions, increasing run volume, conditioning work introduced. Hyrox movements begin.</p>
+    </div>
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <span class="phase-card-name">Phase 3 — Perform</span>
+        <span class="phase-card-weeks">Weeks 13–18</span>
+      </div>
+      <p class="phase-card-desc">Hybrid performance. Events become realistic targets. You're robust enough to train hard without breaking.</p>
+    </div>
+  </div>
+
+  <div class="principles">
+    <p class="section-label">Guiding principles</p>
+    <div class="principle-row">
+      <div class="principle-dot"></div>
+      <p class="principle-text"><strong>Durability before performance.</strong> Every session has a purpose. Nothing is junk volume.</p>
+    </div>
+    <div class="principle-row">
+      <div class="principle-dot"></div>
+      <p class="principle-text"><strong>Strength and endurance coexist.</strong> 3 gym sessions per week, never competing with quality run days.</p>
+    </div>
+    <div class="principle-row">
+      <div class="principle-dot"></div>
+      <p class="principle-text"><strong>The ankle leads the way.</strong> Return to run is physio-gated. No shortcuts.</p>
+    </div>
+    <div class="principle-row">
+      <div class="principle-dot"></div>
+      <p class="principle-text"><strong>10 minutes mobility daily.</strong> Non-negotiable. This is maintenance work on a 46-year-old engine.</p>
+    </div>
+    <div class="principle-row">
+      <div class="principle-dot"></div>
+      <p class="principle-text"><strong>One full rest day.</strong> You lead a life. Sunday is protected.</p>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK SCREEN -->
+<div class="screen" id="screen-week">
+  <div class="week-nav">
+    <button class="week-nav-btn" id="prevWeek" onclick="changeWeek(-1)">‹</button>
+    <div>
+      <p class="week-title" id="weekTitle">Week 1</p>
+      <p class="week-sub" id="weekSub">Foundation · Ankle rehab · Gym starts</p>
+    </div>
+    <button class="week-nav-btn" id="nextWeek" onclick="changeWeek(1)">›</button>
+  </div>
+  <div class="day-list" id="dayList"></div>
+</div>
+
+<!-- SESSION SCREEN -->
+<div class="screen" id="screen-session">
+  <div class="session-header">
+    <p class="session-big-title" id="sessionTitle">Today's session</p>
+    <p class="session-meta" id="sessionMeta">~55 min · tap to check off</p>
+  </div>
+
+  <div class="session-day-tabs" id="sessionTabs"></div>
+
+  <div class="progress-wrap">
+    <div class="prog-row">
+      <span class="prog-label">progress</span>
+      <span class="prog-count" id="sessionCount">0/0</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="sessionProgress"></div></div>
+  </div>
+
+  <div id="sessionExercises"></div>
+  <button class="finish-btn" id="finishBtn" onclick="finishSession()">Session complete ↗</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showScreen('overview', this)">
+    <span class="tab-icon">◎</span>Plan
+  </button>
+  <button class="tab" onclick="showScreen('week', this)">
+    <span class="tab-icon">▦</span>Week
+  </button>
+  <button class="tab" onclick="showScreen('session', this)">
+    <span class="tab-icon">▶</span>Session
+  </button>
+</div>
+
+<script>
+const weeks = [
+  {
+    num: 1,
+    sub: "Foundation · Ankle rehab · Gym starts",
+    days: [
+      { label:"MON", name:"Strength A — Upper focus", type:"strength", tag:"tag-strength", dot:"dot-strength", duration:"55 min",
+        phases:[
+          { name:"Warm-up", exercises:[
+            { name:"Bike or rower", sets:"8 min", cue:"Seated, easy pace. Zero ankle stress." },
+            { name:"Thoracic rotations + arm circles", sets:"2 min", cue:"Seated on bench. Rotate through mid-back." }
+          ]},
+          { name:"A — Horizontal pull", exercises:[
+            { name:"Seated cable row", sets:"3 × 12", cue:"Neutral grip. Retract shoulder blades fully. 3s return. Feel it in mid-back." },
+            { name:"Face pull with rope", sets:"3 × 15", cue:"Cable at eye height. Pull to ears, thumbs back. Light weight only." }
+          ]},
+          { name:"B — Vertical pull", exercises:[
+            { name:"Lat pulldown wide grip", sets:"3 × 10", cue:"Note ROM difference left vs right. Don't force left side." },
+            { name:"Single-arm cable pulldown", sets:"2 × 10 each", cue:"Diagnostic as much as training — note the asymmetry." }
+          ]},
+          { name:"C — Core", exercises:[
+            { name:"Dead bug", sets:"3 × 8 each", cue:"Lower back pressed into floor the entire time. Slow and controlled." },
+            { name:"Pallof press", sets:"3 × 10 each", cue:"Stand side-on to cable. Press out, hold 2s. Anti-rotation." },
+            { name:"Seated leg raise", sets:"3 × 12", cue:"Bench edge. Controlled raise and lower. No ankle load." }
+          ]},
+          { name:"D — Lower body (seated only)", exercises:[
+            { name:"Leg press", sets:"3 × 12", cue:"Reduce depth if left ankle complains at bottom range." },
+            { name:"Seated leg curl", sets:"3 × 10", cue:"4s eccentric. Hamstrings will feel weak — expected." },
+            { name:"Adductor machine", sets:"2 × 15", cue:"Neglected in runners. Inner thigh stability matters." }
+          ]}
+        ]
+      },
+      { label:"TUE", name:"Mobility + Ankle rehab", type:"mobility", tag:"tag-mobility", dot:"dot-mobility", duration:"30 min",
+        phases:[
+          { name:"Ankle rehab", exercises:[
+            { name:"Alphabet ankle circles", sets:"2 × full alphabet", cue:"Seated. Trace the alphabet with your big toe. Both ankles." },
+            { name:"Isometric ankle press", sets:"3 × 10s holds", cue:"Press foot gently against wall in neutral position. No pain." },
+            { name:"Single leg balance", sets:"3 × 20s", cue:"Supported if needed. Build proprioception back gradually." }
+          ]},
+          { name:"Thoracic + shoulder", exercises:[
+            { name:"Thread the needle", sets:"3 × 8 each", cue:"On all fours. Rotate arm under body. Feel the mid-back open." },
+            { name:"Wall slide", sets:"3 × 10", cue:"Back flat against wall. Slide arms up — keep contact throughout." },
+            { name:"Doorframe chest stretch", sets:"3 × 30s", cue:"Both arms at 90°. Lean gently forward. Feel the pec and anterior shoulder." }
+          ]},
+          { name:"Hip + glute", exercises:[
+            { name:"90/90 hip stretch", sets:"2 min each side", cue:"Years of running tightens hip rotators. Breathe into it." },
+            { name:"Pigeon pose", sets:"90s each side", cue:"Support with hands if tight. This will be tight." }
+          ]}
+        ]
+      },
+      { label:"WED", name:"Strength B — Lower focus", type:"strength", tag:"tag-strength", dot:"dot-strength", duration:"60 min",
+        phases:[
+          { name:"Warm-up", exercises:[
+            { name:"Rower", sets:"10 min", cue:"Build from easy to moderate. Hinge from hips on the drive." }
+          ]},
+          { name:"A — Hip hinge pattern", exercises:[
+            { name:"Romanian deadlift", sets:"4 × 10", cue:"Start light. Hinge at hips, soft knee. Feel the hamstrings load. This is your most important movement pattern." },
+            { name:"Single-leg RDL (bodyweight)", sets:"3 × 8 each", cue:"Balance and posterior chain. Slow. Use a rack for support if needed." }
+          ]},
+          { name:"B — Glute focus", exercises:[
+            { name:"Hip thrust — machine or barbell", sets:"4 × 12", cue:"Drive through heels. Full hip extension at top. Squeeze for 1s. Glutes are almost certainly weak." },
+            { name:"Cable pull-through", sets:"3 × 12", cue:"Hinge pattern again. Reinforces the RDL movement with lighter load." }
+          ]},
+          { name:"C — Single leg stability", exercises:[
+            { name:"Step up — low box", sets:"3 × 10 each", cue:"Use a low box (20cm). Control the descent. Left ankle — listen to it." },
+            { name:"Wall sit", sets:"3 × 30s", cue:"Quad endurance. Relevant for running downhills and Hyrox." }
+          ]},
+          { name:"D — Core", exercises:[
+            { name:"Hollow body hold", sets:"3 × 20s", cue:"Lower back pressed flat. If lower back lifts, raise legs higher." },
+            { name:"Side plank", sets:"3 × 20s each", cue:"Hip up. Straight line. Key for lateral stability in running gait." }
+          ]}
+        ]
+      },
+      { label:"THU", name:"Easy aerobic + mobility", type:"aerobic", tag:"tag-aerobic", dot:"dot-aerobic", duration:"45 min",
+        phases:[
+          { name:"Aerobic (choose one)", exercises:[
+            { name:"Bike — easy zone 2", sets:"30 min", cue:"Conversational pace. HR under 140. Keeps aerobic engine ticking while ankle recovers." },
+            { name:"OR swim — easy", sets:"30 min", cue:"Any stroke. No flip turns if ankle is still tender." }
+          ]},
+          { name:"Daily mobility (10 min)", exercises:[
+            { name:"Hip flexor stretch", sets:"60s each", cue:"Kneeling lunge position. Tuck pelvis under. Runners always tight here." },
+            { name:"Calf + achilles stretch", sets:"60s each", cue:"Straight and bent knee versions. Protect that ankle long term." },
+            { name:"Thoracic extension over foam roller", sets:"2 min", cue:"Roll through mid-back. This will be uncomfortable. That's the point." }
+          ]}
+        ]
+      },
+      { label:"FRI", name:"Strength C — Full body", type:"strength", tag:"tag-strength", dot:"dot-strength", duration:"60 min",
+        phases:[
+          { name:"Warm-up", exercises:[
+            { name:"Rower or bike", sets:"8 min", cue:"Moderate effort. Get warm." }
+          ]},
+          { name:"A — Push pattern", exercises:[
+            { name:"Dumbbell bench press", sets:"4 × 10", cue:"Control the descent. Left shoulder — note any discomfort and reduce ROM if needed." },
+            { name:"Incline dumbbell press", sets:"3 × 10", cue:"Upper chest and anterior deltoid. Complements your pulling work." }
+          ]},
+          { name:"B — Carries + loaded movement", exercises:[
+            { name:"Farmer's carry", sets:"4 × 20m", cue:"Trap-bar or dumbbells. Heavy. Shoulders packed, core braced. This is Hyrox prep." },
+            { name:"Suitcase carry (single arm)", sets:"3 × 20m each", cue:"Anti-lateral flexion. Builds oblique strength and gait stability." }
+          ]},
+          { name:"C — Posterior chain", exercises:[
+            { name:"Seated cable row — wide grip", sets:"3 × 12", cue:"Different stimulus from Monday. Elbows out, squeeze mid-back." },
+            { name:"Rear delt fly — cable or dumbbell", sets:"3 × 15", cue:"Shoulder health. Light weight. Squeeze at the back." }
+          ]},
+          { name:"D — Core finisher", exercises:[
+            { name:"Plank with shoulder tap", sets:"3 × 10 each", cue:"Minimal hip rotation. Anti-rotation core." },
+            { name:"Dead bug", sets:"2 × 8 each", cue:"You know this now. Quality over speed." }
+          ]}
+        ]
+      },
+      { label:"SAT", name:"Long easy aerobic", type:"aerobic", tag:"tag-aerobic", dot:"dot-aerobic", duration:"60–90 min",
+        phases:[
+          { name:"Long aerobic (ankle permitting)", exercises:[
+            { name:"Bike ride — zone 2", sets:"60–90 min", cue:"Outdoors if weather allows. Easy conversational pace. This is your aerobic base session." },
+            { name:"OR hike — flat terrain", sets:"60–90 min", cue:"Good for ankle rehab on stable ground. Low impact, high reward." }
+          ]},
+          { name:"Post-session mobility", exercises:[
+            { name:"Full body stretch routine", sets:"10 min", cue:"Hip flexors, quads, hamstrings, calves, thoracic. Every session deserves a cool down." }
+          ]}
+        ]
+      },
+      { label:"SUN", name:"Rest day", type:"rest", tag:"", dot:"dot-rest", duration:"",
+        phases:[]
+      }
+    ]
+  },
+  {
+    num: 2,
+    sub: "Foundation · First runs if cleared · Progress loads",
+    days: [
+      { label:"MON", name:"Strength A — Progressive", type:"strength", tag:"tag-strength", dot:"dot-strength", duration:"60 min",
+        phases:[
+          { name:"A — Pull progression", exercises:[
+            { name:"Seated cable row", sets:"4 × 10", cue:"Add small amount of weight vs week 1. Same quality." },
+            { name:"Face pull", sets:"3 × 15", cue:"Assess left shoulder. Should feel more open than last week." },
+            { name:"Lat pulldown", sets:"3 × 10", cue:"Increase weight slightly if week 1 felt manageable." }
+          ]},
+          { name:"B — Core progression", exercises:[
+            { name:"Dead bug with reach", sets:"3 × 8 each", cue:"Add a slight reach overhead to increase the challenge." },
+            { name:"Pallof press — step further from cable", sets:"3 × 10 each", cue:"More lever = more challenge. Same principle." },
+            { name:"Ab wheel rollout", sets:"3 × 8", cue:"From knees. Go only as far as lower back stays neutral." }
+          ]},
+          { name:"C — Lower (ankle check)", exercises:[
+            { name:"Leg press", sets:"3 × 12", cue:"Try full range today if ankle allows." },
+            { name:"Nordic curl negatives", sets:"3 × 5", cue:"Hamstring injury prevention. Anchor feet, lower as slowly as possible." },
+            { name:"Seated calf raise", sets:"3 × 15", cue:"Begin loading the calf-achilles complex. Light, controlled." }
+          ]}
+        ]
+      },
+      { label:"TUE", name:"Run attempt or walk/bike", type:"run", tag:"tag-run", dot:"dot-run", duration:"20–30 min",
+        phases:[
+          { name:"Return to run (physio cleared only)", exercises:[
+            { name:"Walk 5 min warm-up", sets:"5 min", cue:"Assess ankle on flat ground before any running." },
+            { name:"Run/walk intervals", sets:"10 × (1 min run / 1 min walk)", cue:"First run back. Easy pace. No heroics. Stop if ankle speaks up." },
+            { name:"Walk 5 min cool-down", sets:"5 min", cue:"Assess how ankle feels immediately after." }
+          ]},
+          { name:"If not yet cleared — bike instead", exercises:[
+            { name:"Bike — moderate effort", sets:"30 min", cue:"Zone 2 to low zone 3. Cardio maintenance while ankle heals." }
+          ]}
+        ]
+      },
+      { label:"WED", name:"Strength B — Load progression", type:"strength", tag:"tag-strength", dot:"dot-strength", duration:"60 min",
+        phases:[
+          { name:"A — Hip hinge", exercises:[
+            { name:"Romanian deadlift", sets:"4 × 8", cue:"Increase weight from week 1. Form is the ceiling, not ego." },
+            { name:"Single-leg RDL with dumbbell", sets:"3 × 8 each", cue:"Add a light dumbbell now. Same slow tempo." }
+          ]},
+          { name:"B — Glute + posterior", exercises:[
+            { name:"Hip thrust", sets:"4 × 10", cue:"Add load. Barbell if comfortable, or machine." },
+            { name:"Banded clamshell", sets:"3 × 15 each", cue:"Glute medius. Weak in runners. Will burn quickly — good." }
+          ]},
+          { name:"C — Single leg", exercises:[
+            { name:"Step up — add dumbbells", sets:"3 × 10 each", cue:"Light dumbbells now. Progress the ankle load carefully." },
+            { name:"Bulgarian split squat — bodyweight", sets:"3 × 8 each", cue:"Rear foot elevated. Deep single leg challenge. Ankle will be tested — control it." }
+          ]}
+        ]
+      },
+      { label:"THU", name:"Zone 2 aerobic", type:"aerobic", tag:"tag-aerobic", dot:"dot-aerobic", duration:"45 min",
+        phases:[
+          { name:"Aerobic base", exercises:[
+            { name:"Bike or swim", sets:"40 min", cue:"Zone 2. Conversational. Nose breathing if possible. This is where your aerobic engine is maintained." }
+          ]},
+          { name:"Mobility", exercises:[
+            { name:"Daily 10 min routine", sets:"10 min", cue:"Hips, thoracic, calf. Every day. This is not optional." }
+          ]}
+        ]
+      },
+      { label:"FRI", name:"Strength C — Full body", type:"strength", tag:"tag-strength", dot:"dot-strength", duration:"60 min",
+        phases:[
+          { name:"A — Push + carry", exercises:[
+            { name:"Dumbbell bench press", sets:"4 × 10", cue:"Add weight vs week 1. Left shoulder — how does it feel now?" },
+            { name:"Farmer's carry", sets:"4 × 30m", cue:"Heavier than week 1. Long stride. Shoulders packed." }
+          ]},
+          { name:"B — Conditioning intro", exercises:[
+            { name:"Sled push (if available)", sets:"4 × 20m", cue:"This is pure Hyrox prep. Drive from the hips. Lean into it." },
+            { name:"OR assault bike sprint", sets:"6 × 20s on / 40s off", cue:"Lungs and legs together. Taste of conditioning work to come." }
+          ]},
+          { name:"C — Shoulder health", exercises:[
+            { name:"Band pull-apart", sets:"3 × 20", cue:"Posterior shoulder. Do this every gym day eventually." },
+            { name:"Rear delt fly", sets:"3 × 15", cue:"Light and controlled. Building resilience not size." }
+          ]}
+        ]
+      },
+      { label:"SAT", name:"Long aerobic / first longer run", type:"run", tag:"tag-run", dot:"dot-run", duration:"45–75 min",
+        phases:[
+          { name:"Long session", exercises:[
+            { name:"Easy run — 30-40 min if cleared", sets:"30–40 min", cue:"Zone 2. Flat route. This is your first longer run back. Celebrate it quietly." },
+            { name:"OR bike 60-75 min", sets:"60–75 min", cue:"If ankle not ready for longer run. Keep the aerobic base solid." }
+          ]}
+        ]
+      },
+      { label:"SUN", name:"Rest day", type:"rest", tag:"", dot:"dot-rest", duration:"", phases:[] }
+    ]
+  }
+];
+
+let currentWeek = 0;
+let currentSessionDay = 0;
+let sessionChecked = {};
+
+function showScreen(id, tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  if (tab) tab.classList.add('active');
+  if (id === 'week') renderWeek();
+  if (id === 'session') renderSessionTabs();
+}
+
+function changeWeek(dir) {
+  currentWeek = Math.max(0, Math.min(weeks.length - 1, currentWeek + dir));
+  renderWeek();
+}
+
+function renderWeek() {
+  const w = weeks[currentWeek];
+  document.getElementById('weekTitle').textContent = 'Week ' + w.num;
+  document.getElementById('weekSub').textContent = w.sub;
+  document.getElementById('prevWeek').disabled = currentWeek === 0;
+  document.getElementById('nextWeek').disabled = currentWeek === weeks.length - 1;
+
+  const list = document.getElementById('dayList');
+  list.innerHTML = '';
+  w.days.forEach((day, i) => {
+    const div = document.createElement('div');
+    div.className = 'day-card' + (day.type === 'rest' ? ' rest' : '');
+    if (day.type !== 'rest') div.onclick = () => toggleDay(div, i);
+
+    let detailHTML = '';
+    day.phases.forEach(phase => {
+      detailHTML += `<div class="session-block"><p class="block-label">${phase.name}</p>`;
+      phase.exercises.forEach(ex => {
+        detailHTML += `<div class="ex-item"><span class="ex-item-name">${ex.name}</span><span class="ex-item-sets">${ex.sets}</span></div>`;
+      });
+      detailHTML += `</div>`;
+    });
+
+    div.innerHTML = `
+      <div class="day-header">
+        <span class="day-label">${day.label}</span>
+        <div class="day-type-dot ${day.dot}"></div>
+        <span class="day-name">${day.name}</span>
+        ${day.duration ? `<span class="day-duration">${day.duration}</span>` : ''}
+      </div>
+      ${day.type !== 'rest' ? `<div class="day-detail">${detailHTML}<div class="coaching-note">Tap "Session" tab to run this as an interactive session card</div></div>` : ''}
+    `;
+    list.appendChild(div);
+  });
+}
+
+function toggleDay(el, idx) {
+  const wasExpanded = el.classList.contains('expanded');
+  document.querySelectorAll('.day-card.expanded').forEach(d => d.classList.remove('expanded'));
+  if (!wasExpanded) el.classList.add('expanded');
+}
+
+function renderSessionTabs() {
+  const w = weeks[currentWeek];
+  const tabs = document.getElementById('sessionTabs');
+  tabs.innerHTML = '';
+  w.days.forEach((day, i) => {
+    if (day.type === 'rest') return;
+    const btn = document.createElement('button');
+    btn.className = 'sdt' + (i === currentSessionDay ? ' active' : '');
+    btn.textContent = day.label;
+    btn.onclick = () => { currentSessionDay = i; renderSessionTabs(); renderSession(); };
+    tabs.appendChild(btn);
+  });
+  renderSession();
+}
+
+function renderSession() {
+  const w = weeks[currentWeek];
+  const day = w.days[currentSessionDay];
+  if (!day || day.type === 'rest') return;
+
+  document.getElementById('sessionTitle').textContent = day.name;
+  document.getElementById('sessionMeta').textContent = (day.duration || '') + ' · tap to check off';
+
+  const key = currentWeek + '-' + currentSessionDay;
+  if (!sessionChecked[key]) sessionChecked[key] = {};
+
+  const container = document.getElementById('sessionExercises');
+  container.innerHTML = '';
+
+  let totalEx = 0;
+  day.phases.forEach(phase => {
+    const div = document.createElement('div');
+    div.innerHTML = `<div class="phase-divider">${phase.name}</div>`;
+    phase.exercises.forEach((ex, ei) => {
+      totalEx++;
+      const exKey = phase.name + '-' + ei;
+      const isDone = sessionChecked[key][exKey];
+      const card = document.createElement('div');
+      card.className = 'ex-card' + (isDone ? ' done' : '');
+      card.innerHTML = `
+        <div class="ex-card-main">
+          <div class="ex-check"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#0f0f0d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="ex-card-body">
+            <p class="ex-card-name">${ex.name}</p>
+            <p class="ex-card-hint">${ex.sets}</p>
+          </div>
+          <span class="ex-card-sets">${ex.sets}</span>
+        </div>
+        <div class="ex-card-detail">${ex.cue}</div>
+      `;
+      card.onclick = () => toggleExCard(card, key, exKey);
+      div.appendChild(card);
+    });
+    container.appendChild(div);
+  });
+
+  updateSessionProgress(key, totalEx);
+}
+
+function toggleExCard(card, key, exKey) {
+  const wasExpanded = card.classList.contains('expanded');
+  const wasDone = card.classList.contains('done');
+
+  document.querySelectorAll('.ex-card.expanded').forEach(c => { if(c !== card) c.classList.remove('expanded'); });
+
+  if (wasDone) {
+    card.classList.remove('done', 'expanded');
+    delete sessionChecked[key][exKey];
+  } else if (wasExpanded) {
+    card.classList.add('done');
+    card.classList.remove('expanded');
+    sessionChecked[key][exKey] = true;
+  } else {
+    card.classList.add('expanded');
+  }
+
+  const total = document.querySelectorAll('.ex-card').length;
+  updateSessionProgress(key, total);
+}
+
+function updateSessionProgress(key, total) {
+  const done = Object.keys(sessionChecked[key] || {}).length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('sessionProgress').style.width = pct + '%';
+  document.getElementById('sessionCount').textContent = done + '/' + total;
+  document.getElementById('finishBtn').classList.toggle('visible', done === total && total > 0);
+}
+
+function finishSession() {
+  document.getElementById('sessionExercises').innerHTML = `
+    <div style="text-align:center;padding:3rem 1rem;">
+      <p style="font-size:32px;font-weight:600;color:#c8f075;margin-bottom:8px;">Done.</p>
+      <p style="font-size:14px;color:#555;">Another session in the bank.<br>The hybrid project is underway.</p>
+    </div>
+  `;
+  document.getElementById('finishBtn').classList.remove('visible');
+}
+
+renderWeek();
+</script>
+</body>
+</html>
